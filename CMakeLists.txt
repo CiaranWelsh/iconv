@@ -34,24 +34,6 @@ if (WIN32)
     string(REPLACE "#undef ENABLE_RELOCATABLE" "#define ENABLE_RELOCATABLE 1" _contents "${_contents}")
     file(WRITE "${CONFIG_H}" "${_contents}")
 
-
-    #    configure_file(
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/include/localcharset.h.build.in
-    #            ${CMAKE_CURRENT_BINARY_DIR}/libcharset/include/localcharset.h
-    #    )
-    #    configure_file(
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/include/libcharset.h.in
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/include/libcharset.h
-    #    )
-    #    configure_file(
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.build.in
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.build
-    #    )
-
-    #    configure_file(
-    #            ${CMAKE_CURRENT_BINARY_DIR}/include/iconv.h
-    #            iconv.h
-    #    )
     configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.build.in
             ${CMAKE_CURRENT_BINARY_DIR}/include/iconv.h
@@ -100,7 +82,7 @@ else (WIN32)
     #
     # My first strategy was to move the configured files into
     # the build tree instead. This clearly would work if we get it right,
-    # however it proved very fidly and ./configure actually takes a very long time
+    # however it proved very fidely and ./configure actually takes a very long time
     # for iconv. My alternative strategy was to essentially copy what vcokg authors
     # have done for msvc builds above: hard code the desired variables that
     # are to be passed to iconv's config.h and do some post processing until it works.
@@ -110,6 +92,7 @@ else (WIN32)
     # iconv to compile on other systems.
     ##########################################################################
 
+    #   This code runs configure on linux. SLow. Leave comment out to keep a record.
     #    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/autoconf)
     #    message(STATUS "running ./configure for iconv")
     #    set(_bindir_autoconf_iconv_h "${CMAKE_CURRENT_BINARY_DIR}/autoconf/config.h")
@@ -158,18 +141,13 @@ else (WIN32)
     )
 
 
-    #    configure_file(
-    #            ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-    #            ${CMAKE_CURRENT_BINARY_DIR}/config.h
-    #    )
-
 endif ()
 
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}/include
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
 
 # We use binary directory as it will work for multiple tool chains.
@@ -186,11 +164,11 @@ configure_file(
 set(LIBICHARSET_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libcharset/include")
 set(LIBICONV_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${LIBICHARSET_INCLUDE_DIR}
-        ${LIBICONV_INCLUDE_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}/autoconf # for config.h
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/autoconf> # for config.h
 )
 set(GNULIB_LOCAL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gnulib-local/lib")
 
@@ -201,8 +179,8 @@ add_library(libcharset STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/lib/relocatable-stub.c
         )
 target_include_directories(libcharset PUBLIC
-        ${LIBICHARSET_INCLUDE_DIR}
-        ${LIBICONV_INCLUDE_DIR}
+        $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
         )
 add_library(libiconv-static STATIC
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/iconv.c"
@@ -217,33 +195,33 @@ endif ()
 target_link_libraries(libiconv-static PRIVATE libcharset)
 add_dependencies(libiconv-static libcharset)
 target_include_directories(libiconv-static PUBLIC
-        ${LIBICHARSET_INCLUDE_DIR}
-        ${LIBICONV_INCLUDE_DIR}
-        ${GNULIB_LOCAL_INCLUDE_DIR}
+        $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${GNULIB_LOCAL_INCLUDE_DIR}>
         )
 
 
-#install(TARGETS libcharset libiconv-static EXPORT unofficial-iconv-targets
-#        RUNTIME DESTINATION bin
-#        LIBRARY DESTINATION lib
-#        ARCHIVE DESTINATION lib
-#        )
-#
-#if (NOT DISABLE_INSTALL_HEADERS)
-#    install(FILES
-#            ${CMAKE_CURRENT_BINARY_DIR}/iconv.h
-#            ${CMAKE_CURRENT_BINARY_DIR}/localcharset.h
-#            DESTINATION include
-#            )
-#
-#endif ()
+install(TARGETS libcharset libiconv-static
+        EXPORT libiconv-static
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        )
 
-#install(
-#        EXPORT unofficial-iconv-targets
-#        FILE unofficial-iconv-config.cmake
-#        NAMESPACE unofficial::iconv::
-#        DESTINATION share/unofficial-iconv
-#)
+if (NOT DISABLE_INSTALL_HEADERS)
+    install(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/iconv.h
+            ${CMAKE_CURRENT_BINARY_DIR}/localcharset.h
+            DESTINATION include
+            )
+
+endif ()
+
+install(
+        EXPORT libiconv-static
+        NAMESPACE iconv::
+        DESTINATION share/iconv
+)
 
 
 
