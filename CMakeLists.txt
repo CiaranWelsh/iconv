@@ -132,12 +132,12 @@ else (WIN32)
 
     configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.build.in
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.in
+            ${CMAKE_CURRENT_BINARY_DIR}/include/iconv.h.in
     )
 
     configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h.in
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/iconv.h
+            ${CMAKE_CURRENT_BINARY_DIR}/include/iconv.h
     )
 
 
@@ -204,6 +204,7 @@ target_include_directories(libiconv-static PUBLIC
 
 install(TARGETS libcharset libiconv-static
         EXPORT libiconv-static
+        PUBLIC_HEADER DESTINATION include/iconv
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -211,8 +212,9 @@ install(TARGETS libcharset libiconv-static
 
 if (NOT DISABLE_INSTALL_HEADERS)
     install(FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/iconv.h
-            ${CMAKE_CURRENT_BINARY_DIR}/localcharset.h
+            ${CMAKE_CURRENT_BINARY_DIR}/include/iconv.h
+            ${CMAKE_CURRENT_BINARY_DIR}/libcharset/include/libcharset.h
+            ${CMAKE_CURRENT_BINARY_DIR}/libcharset/include/localcharset.h
             DESTINATION include
             )
 
