@@ -220,12 +220,13 @@ if (NOT DISABLE_INSTALL_HEADERS)
 
 endif ()
 
+# install the export info
 install(
         EXPORT libiconv-static
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
         NAMESPACE iconv::
-        DESTINATION share/iconv
+        FILE iconv-config.cmake
 )
-
 
 
 
