@@ -163,17 +163,23 @@ configure_file(
 
 set(LIBICHARSET_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libcharset/include")
 set(LIBICONV_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
-include_directories(
+
+set(
+        INCLUDE_DIRECTORIES
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/autoconf> # for config.h
 )
+#include_directories(${INCLUDE_DIRECTORIES})
+
 set(GNULIB_LOCAL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gnulib-local/lib")
 
-set(LIBICONV_INCLUDE_DIR ${LIBICONV_INCLUDE_DIR} PARENT_SCOPE)
-
+# only do this when we're not building iconv as top level cmake script
+if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR} )
+    set(LIBICONV_INCLUDE_DIR ${LIBICONV_INCLUDE_DIR} PARENT_SCOPE)
+endif()
 add_library(libcharset STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/lib/localcharset.c
         ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/lib/relocatable-stub.c
@@ -185,6 +191,9 @@ target_include_directories(libcharset PUBLIC
 add_library(libiconv-static STATIC
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/iconv.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/relocatable.c")
+
+target_include_directories(libiconv-static PUBLIC ${INCLUDE_DIRECTORIES})
+
 
 if (WIN32)
     target_compile_definitions(libiconv-static PRIVATE
