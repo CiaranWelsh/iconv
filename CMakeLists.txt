@@ -162,8 +162,7 @@ configure_file(
 
 
 set(LIBICHARSET_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libcharset/include")
-set(LIBICONV_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
-
+set(LIBICONV_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(
         INCLUDE_DIRECTORIES
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -172,7 +171,6 @@ set(
         $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/autoconf> # for config.h
 )
-#include_directories(${INCLUDE_DIRECTORIES})
 
 set(GNULIB_LOCAL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gnulib-local/lib")
 
@@ -180,19 +178,28 @@ set(GNULIB_LOCAL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gnulib-local/lib")
 if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR} )
     set(LIBICONV_INCLUDE_DIR ${LIBICONV_INCLUDE_DIR} PARENT_SCOPE)
 endif()
+
 add_library(libcharset STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/lib/localcharset.c
         ${CMAKE_CURRENT_SOURCE_DIR}/libcharset/lib/relocatable-stub.c
         )
+
 target_include_directories(libcharset PUBLIC
         $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
         )
+
 add_library(libiconv-static STATIC
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/iconv.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/relocatable.c")
 
-target_include_directories(libiconv-static PUBLIC ${INCLUDE_DIRECTORIES})
+target_include_directories(libiconv-static PUBLIC
+        "${INCLUDE_DIRECTORIES}"
+        $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${GNULIB_LOCAL_INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        )
 
 
 if (WIN32)
@@ -201,14 +208,8 @@ if (WIN32)
             -Drelocate=libiconv_relocate -Drelocate2=libiconv_relocate2
             )
 endif ()
-target_link_libraries(libiconv-static PRIVATE libcharset)
+target_link_libraries(libiconv-static PUBLIC libcharset)
 add_dependencies(libiconv-static libcharset)
-target_include_directories(libiconv-static PUBLIC
-        $<BUILD_INTERFACE:${LIBICHARSET_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${LIBICONV_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${GNULIB_LOCAL_INCLUDE_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        )
 
 
 install(TARGETS libcharset libiconv-static
@@ -226,7 +227,6 @@ if (NOT DISABLE_INSTALL_HEADERS)
             ${CMAKE_CURRENT_BINARY_DIR}/libcharset/include/localcharset.h
             DESTINATION include
             )
-
 endif ()
 
 # install the export info
